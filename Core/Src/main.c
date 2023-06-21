@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <math.h>
+#include "string.h"
 #include "EEPROM.h"
 /* USER CODE END Includes */
 
@@ -50,25 +51,9 @@ CAN_HandleTypeDef hcan1;
 
 I2C_HandleTypeDef hi2c2;
 
-RTC_HandleTypeDef hrtc;
-
 TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
-
-RTC_DateTypeDef gDate;
-RTC_TimeTypeDef gTime;
-
-char time[10];
-char date[10];
-
-uint8_t hours = 0;
-uint8_t minutes = 0;
-uint8_t seconds = 0;
-uint8_t weekDay = 0;
-uint8_t month = 0;
-uint8_t date1 = 0;
-uint8_t year = 0;
 
 uint16_t digitalStates[80];
 
@@ -82,7 +67,6 @@ static void MX_I2C2_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_RTC_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -417,68 +401,6 @@ struct analogConfig {
 		{ 0.64, 3.2, 0, 40, 60, 1500, 1 }				//3042
 };
 */
-void set_time(void) {
-	RTC_TimeTypeDef sTime = { 0 };
-	RTC_DateTypeDef sDate = { 0 };
-
-	/* USER CODE BEGIN RTC_Init 1 */
-
-	/* USER CODE END RTC_Init 1 */
-	/** Initialize RTC Only
-	 */
-
-	hrtc.Instance = RTC;
-	hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-	hrtc.Init.AsynchPrediv = 127;
-	hrtc.Init.SynchPrediv = 255;
-	hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-	hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-	hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-	if (HAL_RTC_Init(&hrtc) != HAL_OK) {
-		Error_Handler();
-	}
-
-	/* USER CODE BEGIN Check_RTC_BKUP */
-
-	/* USER CODE END Check_RTC_BKUP */
-
-	/** Initialize RTC and set the Time and Date
-	 */
-
-	sTime.Hours = 0x14;
-	sTime.Minutes = 0x14;
-	sTime.Seconds = 0x30;
-	sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-	sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK) {
-		Error_Handler();
-	}
-	sDate.WeekDay = RTC_WEEKDAY_TUESDAY;
-	sDate.Month = RTC_MONTH_JULY;
-	sDate.Date = 0x5;
-	sDate.Year = 0x22;
-
-	if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK) {
-		Error_Handler();
-	}
-	/* USER CODE BEGIN RTC_Init 2 */
-
-	/* USER CODE END RTC_Init 2 */
-}
-
-void get_time(void) {
-
-	/* Get the RTC current Time */
-	HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
-	/* Get the RTC current Date */
-	HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
-	/* Display time Format: hh:mm:ss */
-	sprintf((char*) time, "%02d:%02d:%02d", gTime.Hours, gTime.Minutes,
-			gTime.Seconds);
-	/* Display date Format: dd-mm-yy */
-	sprintf((char*) date, "%02d-%02d-%2d", gDate.Date, gDate.Month,
-			2000 + gDate.Year);
-}
 
 /* USER CODE END 0 */
 
@@ -515,7 +437,6 @@ int main(void)
   MX_ADC2_Init();
   MX_ADC3_Init();
   MX_ADC1_Init();
-  MX_RTC_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 	/*
@@ -525,8 +446,8 @@ int main(void)
 	 }
 	 */
 
-	//EEPROM_Write_NUM (6, 0, dataw3);
-	//datar3 = EEPROM_Read_NUM (6, 0);
+	EEPROM_Write_NUM (6, 0, dataw3);
+	datar3 = EEPROM_Read_NUM (6, 0);
 	HAL_CAN_Start(&hcan1);
 
 	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
@@ -543,9 +464,6 @@ int main(void)
 
 	HAL_TIM_Base_Start_IT(&htim6);
 
-	if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x32F2) {
-		set_time();
-	}
 
 	/*
 	 EEPROM_PageErase(0);
@@ -659,11 +577,7 @@ int main(void)
 
 		}
 
-		get_time();
 
-		hours = gTime.Hours;
-		minutes = gTime.Minutes;
-		seconds = gTime.Seconds;
 		////////////////////////////////////////////////mux u saydir adc ve dig deyerlri yolla/////////////////////////////////////////////////////
 		for (j = 0; j < 16; ++j) {
 			mux(15 - j);
@@ -1019,9 +933,8 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -1280,68 +1193,6 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
-
-}
-
-/**
-  * @brief RTC Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RTC_Init(void)
-{
-
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
-
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-  /** Initialize RTC Only
-  */
-  hrtc.Instance = RTC;
-  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-  hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
-  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-  if (HAL_RTC_Init(&hrtc) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* USER CODE BEGIN Check_RTC_BKUP */
-
-  /* USER CODE END Check_RTC_BKUP */
-
-  /** Initialize RTC and set the Time and Date
-  */
-  sTime.Hours = 0x14;
-  sTime.Minutes = 0x14;
-  sTime.Seconds = 0x30;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sDate.WeekDay = RTC_WEEKDAY_TUESDAY;
-  sDate.Month = RTC_MONTH_JULY;
-  sDate.Date = 0x5;
-  sDate.Year = 0x22;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
 
 }
 
