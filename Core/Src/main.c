@@ -251,13 +251,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 
 	// burda gelen alarmLimitleri fade outlar digitiallar ucun count bilgisi birde contact state qebul et yazdir
 	if (RxHeader.StdId == 0x600) {
-		fadeOutReg = 1;
-		alarmLevelRecivedFlag = 1;	//qebul etdiyimizi qey edirik. geri xeber etdiyimizde sifirla.
 		recivedID = (int) (RxData[0]) + ((int) (RxData[1]) << 8);
 		float value = 0;
 		TxData[23][0] = recivedID;
 		for (int k = 0; k < 63; k++) {
 			if (digitalInputId[k] == recivedID) {
+				fadeOutReg = 1;
+				alarmLevelRecivedFlag = 1;	//qebul etdiyimizi qey edirik. geri xeber etdiyimizde sifirla.
 				fadeOut[k] = RxData[2] & 0x01;
 				contactState[k] = (RxData[2] >> 1) & 0x01;
 				delaySeconds[k] = (int)RxData[3] + ((int)RxData[4] << 8);
@@ -268,6 +268,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 		{
 			if(analogInputID[k] == recivedID) //deyekki id bunun icindedi
 			{
+				fadeOutReg = 1;
+				alarmLevelRecivedFlag = 1;	//qebul etdiyimizi qey edirik. geri xeber etdiyimizde sifirla.
 				value = (int)RxData[3] + ((int)RxData[4] << 8) + ((float)RxData[5])/100;
 				analogFadeOut[k] = RxData[2];
 				alarmLevel[k]=value;
@@ -278,9 +280,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 	//0x650 gelende hl hazirdaki deyerleri qoy 0x656 nin icine yolla pc yeki orda pencerede goruntuleye bilsin.
 	if (RxHeader.StdId == 0x650) {
 		recivedID = (int) (RxData[0]) + ((int) (RxData[1]) << 8);
-		prencereAcilmaFlag = 1;
 		for (int k = 0; k < 63; k++) {
 			if (digitalInputId[k] == recivedID) {
+				prencereAcilmaFlag = 1;
 				TxData[24][0] = recivedID;
 				TxData[24][1] = fadeOut[k] + (contactState[k] << 1);
 				TxData[24][2] = delaySeconds[k];
@@ -292,6 +294,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 		{
 			if(analogInputID[k] == recivedID) //deyekki id bunun icindedi
 			{
+				prencereAcilmaFlag = 1;
 				TxData[24][0] = recivedID;
 				TxData[24][1] = analogFadeOut[k];
 				TxData[24][2] = (int)alarmLevel[k];
