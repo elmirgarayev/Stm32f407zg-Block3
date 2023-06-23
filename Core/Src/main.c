@@ -175,7 +175,7 @@ uint16_t contactState[63];
 uint16_t contactStateTot[5] = {0,0,0,0,0};
 uint16_t contactStateRead[5] = {0,0,0,0,0};
 uint16_t contactStateTest[71];
-uint16_t delaySeconds[63] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };	//signal cixdiqdan sonra neqeder gozleyecek
+uint16_t delaySeconds[64] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };	//signal cixdiqdan sonra neqeder gozleyecek
 uint16_t delaySecondsTot[40];
 uint16_t delaySecondsTotRead[40];
 uint16_t digitalInputId[63] = { 3065, 3066, 3067, 3068, 3069, 3070, 3071, 3072, 3073, 3074, 3075, 3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 3095, 3096, 3097, 3098, 3099, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3110, 3111, 3112, 3053, 3054, 3055, 3056, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3001, 3002, 3003 };				//signal id leri
@@ -477,7 +477,7 @@ int main(void)
 
 
 	// delay secondsu eepromdan oxuma
-	for(int t=0;t<9;t++){
+	for(int t=0;t<8;t++){
 		for(int k=0;k<4;k++){
 
 			delaySecondsTotRead[t*4+k] = EEPROM_Read_NUM(20+t, 16*k);
@@ -602,7 +602,7 @@ int main(void)
 
 			/////////delay secondsu eeproma yazma
 
-			for(int t=0;t<9;t++){
+			for(int t=0;t<8;t++){
 				for(int k=0;k<4;k++){
 					delaySecondsTot[t*4+k] |= delaySeconds[8*t+k*2]<<0;
 					delaySecondsTot[t*4+k] |= delaySeconds[8*t+k*2+1]<<8;
