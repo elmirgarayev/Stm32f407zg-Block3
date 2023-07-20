@@ -83,7 +83,7 @@ static void MX_TIM6_Init(void);
 int dataw3 = 31;
 int datar3;
 float alarmLevelWrite[38] = {5.92, 5.92, 1.62, 1.62, 1.08, 5.24, 5.24, 1.03, 1.03, 1.08, 1.8, 1.8, 2.7, 2.7, 3.42, 1.35, 2.07, 1.08, 1.08, 0.9, 1.8, 1.8, 3.96, 3.72, 6.12, 6.12, 4.37, 4.37, 6.12, 6.12, 6.12, 5.31, 5.31, 5.27, 5.27, 2.61, 2.61, 4};
-float alarmLevelRead[38] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+float alarmLevelRead[38];
 
 float alarmLevel[38] = {5.92, 5.92, 1.62, 1.62, 1.08, 5.24, 5.24, 1.03, 1.03, 1.08, 1.8, 1.8, 2.7, 2.7, 3.42, 1.35, 2.07, 1.08, 1.08, 0.9, 1.8, 1.8, 3.96, 3.72, 6.12, 6.12, 4.37, 4.37, 6.12, 6.12, 6.12, 5.31, 5.31, 5.27, 5.27, 2.61, 2.61, 4};
 
@@ -401,6 +401,11 @@ int main(void)
 
 	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
+/*
+	 for(int t=100;t > 400 ; t++){
+	 EEPROM_PageErase(t);
+	 }
+*/
 
 	for (int j = 0; j < 30; j++) {
 		TxHeader[j].DLC = 8;
@@ -451,16 +456,9 @@ int main(void)
 	}
 
 	//analog alarmLevel leri burda eepromdan yukle
-	for(int k=0;k<24;k++)
+	for(int k=0;k<38;k++)
 	{
-		if(k>=16)
-		{
-			alarmLevel[k] = EEPROM_Read_NUM(9, 4*k-64);
-		}
-		else
-		{
-			alarmLevel[k] = EEPROM_Read_NUM(8, 4*k);
-		}
+		alarmLevel[k] = EEPROM_Read_NUM(400+k, 20);
 	}
 
 	contactStateRead[0] = EEPROM_Read_NUM(10, 0);
@@ -519,19 +517,13 @@ int main(void)
 		// bu hissede eger alarm level deyisibse yollayirq
 		if (alarmLevelRecivedFlag == 1)
 		{
-			for(int k=0;k<24;k++)
+			for(int k=0;k<38;k++)
 			{
-				if(k>=16)
-				{
-					EEPROM_Write_NUM(9, 4*k-64, alarmLevel[k]);
-					alarmLevelRead[k] = EEPROM_Read_NUM(9, 4*k-64);
-				}
-				else
-				{
-					EEPROM_Write_NUM(8, 4*k, alarmLevel[k]);
-					alarmLevelRead[k] = EEPROM_Read_NUM(8, 4*k);
-				}
+				EEPROM_Write_NUM(400+k, 20, alarmLevel[k]);
+				alarmLevelRead[k] = EEPROM_Read_NUM(400+k, 20);
+
 			}
+
 			HAL_CAN_AddTxMessage(&hcan1, &TxHeader[23], TxData[23], &TxMailbox);
 			HAL_Delay(1);
 			alarmLevelRecivedFlag = 0;
