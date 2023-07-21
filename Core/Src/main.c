@@ -725,6 +725,7 @@ int main(void)
 						if (waitingForDelay[k] == 1){ //qoyulan vaxdin tamamlanmagin gozdeyirik
 							if ((delaySeconds[k] <= delaySecondsCount[k]) && (fadeOut[k] == 0)){ // qoyulan vaxda catdisa
 								alarmOn[k] = 1;                  //alarmi yandir
+								delaySecondsCountForOff[k] = 16; //alarmi sonudrmek ucun olan sayicini 5 ele
 								sendData(digitalInputId[k]);				//
 								stationAlarm = notResetAlarm;//alarimi yandir signal cixdi deye
 								HAL_GPIO_WritePin(GPIOF, GPIO_PIN_13, GPIO_PIN_SET);	//alarim isigin yandir
@@ -732,9 +733,10 @@ int main(void)
 							}
 						} else {
 							alarmCount[k]++;//n defe alarm cixidigin yoxlayan sayici
-							if (alarmCount[k] > 4){			//4 defe cixdisa gir
+							if (alarmCount[k] > 2){			//2 defe cixdisa gir
 								if ((delaySeconds[k] == 0) && (fadeOut[k] == 0)){//saniye sayan 0 disa gir
 									alarmOn[k] = 1;				//alari yandir
+									delaySecondsCountForOff[k] = 16; //alarmi sonudrmek ucun olan sayicini 5 ele
 									sendData(digitalInputId[k]);
 									stationAlarm = notResetAlarm;//alarimi yandir signal cixdi deye
 									HAL_GPIO_WritePin(GPIOF, GPIO_PIN_13, GPIO_PIN_SET);//alarim isigin yandir
@@ -747,6 +749,9 @@ int main(void)
 						//delay;
 					}
 				} else { 	//sifirla eger signal gelmeyibse hec
+					if (delaySecondsCountForOff[k] == 0) {
+						alarmOn[k] = 0;
+					}
 					alarmOn[k] = 0;
 					alarmCount[k] = 0;
 					waitingForDelay[k] = 0;
@@ -1357,12 +1362,15 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim6) {
 		//HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_13);
-		for (int h = 0; h < 16; h++) {
+		for (int h = 0; h < 63; h++) {
 			if (waitingForDelay[h] == 1) {
 				delaySecondsCount[h]++;
-				if (delaySecondsCount[h] >= 50) {
-					//delaySecondsCount[h] = 50;
+				if (delaySecondsCount[h] >= 255) {
+					delaySecondsCount[h] = 255;
 				}
+			}
+			if (delaySecondsCountForOff[h] > 0) {
+				delaySecondsCountForOff[h] -= 1;
 			}
 		}
 	}
