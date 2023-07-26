@@ -85,7 +85,7 @@ int datar3;
 float alarmLevelWrite[38] = {5.92, 5.92, 1.62, 1.62, 1.08, 5.24, 5.24, 1.03, 1.03, 1.08, 1.8, 1.8, 2.7, 2.7, 3.42, 1.35, 2.07, 1.08, 1.08, 0.9, 1.8, 1.8, 3.96, 3.72, 6.12, 6.12, 4.37, 4.37, 6.12, 6.12, 6.12, 5.31, 5.31, 5.27, 5.27, 2.61, 2.61, 4};
 float alarmLevelRead[38];
 
-float alarmLevel[38] = {5.92, 5.92, 1.62, 1.62, 1.08, 5.24, 5.24, 1.03, 1.03, 1.08, 1.8, 1.8, 2.7, 2.7, 3.42, 1.35, 2.07, 1.08, 1.08, 0.9, 1.8, 1.8, 3.96, 3.72, 6.12, 6.12, 4.37, 4.37, 6.12, 6.12, 6.12, 5.31, 5.31, 5.27, 5.27, 2.61, 2.61, 4};
+float alarmLevel[38];
 
 int i2_t = 0;
 
@@ -292,8 +292,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 
 		for(int k=0; k<38; k++)
 		{
-			if(analogInputID[k] == recivedID) //deyekki id bunun icindedi
-			{
+			if(analogInputID[k] == recivedID){ //deyekki id bunun icindedi
 				prencereAcilmaFlag = 1;
 				TxData[24][0] = recivedID;
 				TxData[24][1] = analogFadeOut[k];
@@ -302,7 +301,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 			}
 		}
 	}
-
 }
 
 //float alarmLevel[] = {5.92, 5.92, 1.62, 1.62, 1.08, 5.24, 5.24, 1.03, 1.03, 1.08, 1.8, 1.8, 2.7, 2.7, 3.42, 1.35, 2.07, 1.08, 1.08, 0.9, 1.8, 1.8, 3.96, 3.72, 6.12, 6.12, 4.37, 4.37, 6.12, 6.12, 6.12, 5.31, 5.31, 5.27, 5.27, 2.61, 2.61, 4};
@@ -452,7 +450,6 @@ int main(void)
 		if (k < 6) {
 			analogFadeOut[k + 32] = (analogFadeOutTotRead[2] >> k) & 1;
 		}
-
 	}
 
 	//analog alarmLevel leri burda eepromdan yukle
@@ -482,7 +479,6 @@ int main(void)
 	// delay secondsu eepromdan oxuma
 	for(int t=0;t<8;t++){
 		for(int k=0;k<4;k++){
-
 			delaySecondsTotRead[t*4+k] = EEPROM_Read_NUM(20+t, 16*k);
 
 			delaySeconds[8*t+k*2] = (delaySecondsTotRead[t*4+k]) & 0xff;
@@ -517,11 +513,9 @@ int main(void)
 		// bu hissede eger alarm level deyisibse yollayirq
 		if (alarmLevelRecivedFlag == 1)
 		{
-			for(int k=0;k<38;k++)
-			{
+			for(int k=0;k<38;k++){
 				EEPROM_Write_NUM(400+k, 20, alarmLevel[k]);
 				alarmLevelRead[k] = EEPROM_Read_NUM(400+k, 20);
-
 			}
 
 			HAL_CAN_AddTxMessage(&hcan1, &TxHeader[23], TxData[23], &TxMailbox);
@@ -552,7 +546,6 @@ int main(void)
 				if (t < 6) {
 					analogFadeOutTot[2] |= analogFadeOut[t + 32] << t;
 				}
-
 			}
 
 			EEPROM_Write_NUM(1, 0, fadeOutTot[0]);
@@ -572,6 +565,12 @@ int main(void)
 			analogFadeOutTotReadTest[0] = EEPROM_Read_NUM(5, 0);
 			analogFadeOutTotReadTest[1] = EEPROM_Read_NUM(6, 0);
 			analogFadeOutTotReadTest[2] = EEPROM_Read_NUM(7, 0);
+
+			contactStateTot[0] = 0;
+			contactStateTot[1] = 0;
+			contactStateTot[2] = 0;
+			contactStateTot[3] = 0;
+			contactStateTot[4] = 0;
 
 			//digital signallarin contact state ini eeproma yazdirmaq
 			for(int t=0;t<16;t++){
@@ -752,7 +751,6 @@ int main(void)
 					if (delaySecondsCountForOff[k] == 0) {
 						alarmOn[k] = 0;
 					}
-					alarmOn[k] = 0;
 					alarmCount[k] = 0;
 					waitingForDelay[k] = 0;
 					delaySecondsCount[k] = 0;
@@ -767,29 +765,17 @@ int main(void)
 				digitalSum[tamHisse] |= (fadeOut[k] << (kesirHisse * 2 + 1));
 			}
 		}
-		if (HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_6) == 1 || recivedReset == 1) //reset basdiq veya conpuyuterden reset geldi
-				{
+		if (HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_6) == 1 || recivedReset == 1){ //reset basdiq veya conpuyuterden reset geldi
 			stationAlarm = resetAlarm;						//alarmi reset et
 			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_13, GPIO_PIN_RESET);//ve sondur alarmi
 			recivedReset = 0;				//compyuterden gelen reseti sifirla
-			say = 10;
-		}
-
-		if (say != 0) {
-			TxData[22][1] = 3;
-			say--;
-			for (int hh = 0; hh < 10; hh++) {
-				HAL_CAN_AddTxMessage(&hcan1, &TxHeader[22], TxData[22], &TxMailbox);
-				HAL_Delay(20);
-			}
-		} else {
-			TxData[22][1] = 0;
 		}
 
 		TxData[22][0] = stationAlarm;
 		TxData[22][1] = stationAlarm;
 		TxData[22][2] = stationAlarm;
 		TxData[22][3] = stationAlarm;
+
 
 		HAL_CAN_AddTxMessage(&hcan1, &TxHeader[22], TxData[22], &TxMailbox);
 		HAL_Delay(20);
