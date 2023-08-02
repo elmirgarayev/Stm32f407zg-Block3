@@ -163,7 +163,7 @@ CAN_RxHeaderTypeDef RxHeader;
 int datacheck = 0;
 uint8_t pk1 = 0;
 
-uint16_t TxData[40][4];
+uint8_t TxData[40][8];
 
 uint8_t RxData[8];
 
@@ -253,21 +253,21 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 	if (RxHeader.StdId == 0x600) {
 		recivedID = (int) (RxData[0]) + ((int) (RxData[1]) << 8);
 		float value = 0;
-		TxData[23][0] = recivedID;
+		TxData[23][0] = RxData[0];
+		TxData[23][1] = RxData[1];
 		for (int k = 0; k < 63; k++) {
 			if (digitalInputId[k] == recivedID) {
 				fadeOutReg = 1;
 				alarmLevelRecivedFlag = 1;	//qebul etdiyimizi qey edirik. geri xeber etdiyimizde sifirla.
 				fadeOut[k] = RxData[2] & 0x01;
 				contactState[k] = (RxData[2] >> 1) & 0x01;
-				delaySeconds[k] = (int)RxData[3] + ((int)RxData[4] << 8);
+				delaySeconds[k] = (int)RxData[3];
 			}
 		}
 
 		for(int k=0; k<38; k++)
 		{
-			if(analogInputID[k] == recivedID) //deyekki id bunun icindedi
-			{
+			if(analogInputID[k] == recivedID){ //deyekki id bunun icindedi
 				fadeOutReg = 1;
 				alarmLevelRecivedFlag = 1;	//qebul etdiyimizi qey edirik. geri xeber etdiyimizde sifirla.
 				value = (int)RxData[3] + ((int)RxData[4] << 8) + ((float)RxData[5])/100;
@@ -283,10 +283,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 		for (int k = 0; k < 63; k++) {
 			if (digitalInputId[k] == recivedID) {
 				prencereAcilmaFlag = 1;
-				TxData[24][0] = recivedID;
-				TxData[24][1] = fadeOut[k] + (contactState[k] << 1);
-				TxData[24][2] = delaySeconds[k];
-				TxData[24][3] = 0;
+				TxData[24][0] = RxData[0];
+				TxData[24][1] = RxData[1];
+				TxData[24][2] = fadeOut[k] + (contactState[k] << 1);
+				TxData[24][3] = 0;	///NIYEYSE MENASIZ OLARAQ YERIN DEYISMISEM
+				TxData[24][4] = delaySeconds[k];
+				TxData[24][5] = 0;
+				TxData[24][6] = 0;
+				TxData[24][7] = 0;
 			}
 		}
 
@@ -294,10 +298,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 		{
 			if(analogInputID[k] == recivedID){ //deyekki id bunun icindedi
 				prencereAcilmaFlag = 1;
-				TxData[24][0] = recivedID;
-				TxData[24][1] = analogFadeOut[k];
-				TxData[24][2] = (int)alarmLevel[k];
-				TxData[24][3] = (int)((alarmLevel[k] - (int)alarmLevel[k]) * 100);
+				TxData[24][0] = RxData[0];
+				TxData[24][1] = RxData[1];
+				TxData[24][2] = analogFadeOut[k];
+				TxData[24][3] = 0;
+				TxData[24][4] = (int) alarmLevel[k];
+				TxData[24][5] = (int) alarmLevel[k] >> 8;
+				TxData[24][6] = (int) ((alarmLevel[k] - (int) alarmLevel[k]) * 100);
+				TxData[24][7] = 0;
 			}
 		}
 	}
@@ -781,13 +789,22 @@ int main(void)
 		HAL_Delay(20);
 
 		TxData[19][0] = digitalSum[0];
-		TxData[19][1] = digitalSum[1];
-		TxData[19][2] = digitalSum[2];
-		TxData[19][3] = digitalSum[3];
+		TxData[19][1] = digitalSum[0] >> 8;
+		TxData[19][2] = digitalSum[1];
+		TxData[19][3] = digitalSum[1] >> 8;
+		TxData[19][4] = digitalSum[2];
+		TxData[19][5] = digitalSum[2] >> 8;
+		TxData[19][6] = digitalSum[3];
+		TxData[19][7] = digitalSum[3] >> 8;
+
 		TxData[20][0] = digitalSum[4];
-		TxData[20][1] = digitalSum[5];
-		TxData[20][2] = digitalSum[6];
-		TxData[20][3] = digitalSum[7];
+		TxData[20][1] = digitalSum[4] >> 8;
+		TxData[20][2] = digitalSum[5];
+		TxData[20][3] = digitalSum[5] >> 8;
+		TxData[20][4] = digitalSum[6];
+		TxData[20][5] = digitalSum[6] >> 8;
+		TxData[20][6] = digitalSum[7];
+		TxData[20][7] = digitalSum[7] >> 8;
 
 		HAL_CAN_AddTxMessage(&hcan1, &TxHeader[19], TxData[19], &TxMailbox);
 		HAL_Delay(20);
@@ -874,8 +891,10 @@ int main(void)
 				secondWord[i2_t] = (uint16_t) secondByte[i2_t] + ((uint16_t) fractionPart[i2_t]) * 256;
 				secondByte[i2_t] &= 0x03;
 
-				TxData[i][t * 2] = intPart[i2_t];
-				TxData[i][t * 2 + 1] = secondWord[i2_t];
+				TxData[i][t * 4] = intPart[i2_t];
+				TxData[i][t * 4 + 1] = intPart[i2_t] >> 8;
+				TxData[i][t * 4 + 2] = secondWord[i2_t];
+				TxData[i][t * 4 + 3] = secondWord[i2_t] >> 8;
 			}
 
 			HAL_CAN_AddTxMessage(&hcan1, &TxHeader[i], TxData[i], &TxMailbox);
