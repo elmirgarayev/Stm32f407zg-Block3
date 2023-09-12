@@ -89,6 +89,10 @@ float alarmLevel[38];
 
 int i2_t = 0;
 
+int delayTime = 5;
+
+int sendCountCheck[60];
+
 uint16_t message[62];
 uint16_t analog[62];
 
@@ -435,7 +439,7 @@ int main(void)
 		TxData[21][6] = 0;
 		TxData[21][7] = 0;
 		HAL_CAN_AddTxMessage(&hcan1, &TxHeader[21], TxData[21], &TxMailbox);
-		HAL_Delay(20);
+		HAL_Delay(delayTime);
 	}
 
 
@@ -788,9 +792,14 @@ int main(void)
 		TxData[22][2] = stationAlarm;
 		TxData[22][3] = stationAlarm;
 
-
-		HAL_CAN_AddTxMessage(&hcan1, &TxHeader[22], TxData[22], &TxMailbox);
-		HAL_Delay(20);
+		if(sendCountCheck[40] >= 10){
+			HAL_CAN_AddTxMessage(&hcan1, &TxHeader[22], TxData[22], &TxMailbox);
+			HAL_Delay(delayTime);
+			sendCountCheck[40] = 0;
+		}
+		else{
+			sendCountCheck[40]++;
+		}
 
 		TxData[19][0] = digitalSum[0];
 		TxData[19][1] = digitalSum[0] >> 8;
@@ -810,10 +819,23 @@ int main(void)
 		TxData[20][6] = digitalSum[7];
 		TxData[20][7] = digitalSum[7] >> 8;
 
-		HAL_CAN_AddTxMessage(&hcan1, &TxHeader[19], TxData[19], &TxMailbox);
-		HAL_Delay(20);
-		HAL_CAN_AddTxMessage(&hcan1, &TxHeader[20], TxData[20], &TxMailbox);
-		HAL_Delay(20);
+		if(sendCountCheck[41] >= 10){
+			HAL_CAN_AddTxMessage(&hcan1, &TxHeader[19], TxData[19], &TxMailbox);
+			HAL_Delay(delayTime);
+			sendCountCheck[41] = 0;
+		}
+		else{
+			sendCountCheck[41]++;
+		}
+
+		if(sendCountCheck[42] >= 10){
+			HAL_CAN_AddTxMessage(&hcan1, &TxHeader[20], TxData[20], &TxMailbox);
+			HAL_Delay(delayTime);
+			sendCountCheck[42] = 0;
+		}
+		else{
+			sendCountCheck[42]++;
+		}
 
 		digitalSum[0] = 0;
 		digitalSum[1] = 0;
@@ -901,8 +923,14 @@ int main(void)
 				TxData[i][t * 4 + 3] = secondWord[i2_t] >> 8;
 			}
 
-			HAL_CAN_AddTxMessage(&hcan1, &TxHeader[i], TxData[i], &TxMailbox);
-			HAL_Delay(20);
+			if(sendCountCheck[i] >= 10){
+				HAL_CAN_AddTxMessage(&hcan1, &TxHeader[i], TxData[i], &TxMailbox);
+				HAL_Delay(delayTime);
+				sendCountCheck[i] = 0;
+			}
+			else{
+				sendCountCheck[i]++;
+			}
 		}
 
 		/*
